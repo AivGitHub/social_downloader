@@ -11,9 +11,6 @@ Command line application for downloading media from social networks
 **In the future:**
 1. ```pip install social-downloader```
 
-**Now:**
-1. python -m downloader
-
 ## Usage
 
 ```python -m downloader -h```
