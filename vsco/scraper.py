@@ -5,18 +5,12 @@
 
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
-import pathlib
-import pprint
 import requests
 import time
 
 
 class Scraper(object):
-    """
-    TODO: Move downloader to maintain!
-    """
     _base_site = 'http://vsco.co/'
-    _protocol = 'http://'
 
     user_info_header = {
         'Accept': '*/*',
@@ -42,10 +36,6 @@ class Scraper(object):
 
     def __init__(self, username: str) -> None:
         self.username = username
-
-        self._user_path = pathlib.Path.cwd() / self.username
-        self._images_path = self._user_path / 'images'
-        self._video_path = self._user_path / 'videos'
 
         self.session = requests.Session()
         self.session.get(
