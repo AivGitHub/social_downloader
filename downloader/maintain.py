@@ -2,16 +2,15 @@
 # All rights reserved.
 #
 # Use as you want, modify as you want but please include the author's name.
-import os
-from concurrent.futures import ThreadPoolExecutor
+
 import concurrent.futures
-from typing import Optional
 import pathlib
 import pprint
+import requests
 import sys
 
-import requests
-
+from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 from vsco.scraper import Scraper as ScraperVSCO
 
 
@@ -44,12 +43,7 @@ class Maintain(object):
     def _path_gen(path):
         if path:
             path = path[0]
-            if os.path.isabs(path):
-                return pathlib.Path(path)
-            else:
-                return pathlib.Path.cwd() / path
-        else:
-            return pathlib.Path.cwd()
+        return pathlib.Path(path or '.').resolve()
 
     def download_video(self, data: dict, username: Optional[str] = None) -> None:
         """ Can be used independently (without download_media)

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import pathlib
-import pkg_resources
 import sys
 
 from setuptools import find_packages, setup
@@ -22,10 +21,6 @@ def get_version():
             return line.split()[2][1:-1]
 
 
-def get_requirements():
-    return get_file('requirements.txt').splitlines()
-
-
 setup(
     name='social-downloader',
     version=get_version(),
@@ -42,12 +37,15 @@ setup(
     long_description=get_file('README.md'),
     long_description_content_type='text/markdown',
     packages=find_packages(),
-    install_requires=get_requirements(),
+    install_requires=[
+        'certifi==2021.10.8',
+        'charset-normalizer==2.0.10',
+        'idna==3.3',
+        'requests==2.27.1',
+        'urllib3==1.26.8',
+    ],
     classifiers=[
         'Programming Language :: Python :: 3',
     ],
     python_requires='>=3.6',
-    package_data={
-        '': ['../requirements.txt'],
-    }
 )
