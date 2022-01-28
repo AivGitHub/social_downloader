@@ -10,9 +10,9 @@ import time
 
 
 class Scraper(object):
-    _base_site = 'http://vsco.co/'
+    _BASE_SITE = 'http://vsco.co/'
 
-    user_info_header = {
+    USER_INFO_HEADER = {
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-US,en;q=0.9',
@@ -22,7 +22,7 @@ class Scraper(object):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.84 Safari/537.36'
     }
 
-    media_header = {
+    MEDIA_HEADER = {
         'Accept': '*/*',
         'Accept-Encoding': 'gzip, deflate',
         'Accept-Language': 'en-US,en;q=0.9',
@@ -39,22 +39,27 @@ class Scraper(object):
 
         self.session = requests.Session()
         self.session.get(
-            f'{self._base_site}content/Static/userinfo?callback=jsonp_{(str(round(time.time() * 1000)))}_0',
-            headers=self.user_info_header
+            f'{self._BASE_SITE}content/Static/userinfo?callback=jsonp_{(str(round(time.time() * 1000)))}_0',
+            headers=self.USER_INFO_HEADER
         )
         self.uid = self.session.cookies.get('vs')
+        if not self.uid:
+            raise ValueError('Invalid session')
 
         self.site_data = self.get_site_data()
+        if not self.site_data.ok:
+            raise ValueError(f'Invalid username `{username}`')
+
         self.site_data_json = self.site_data.json()
         self.site_id = self.get_site_id()
 
-        self.media_url = f'{self._base_site}ajxp/%s/2.0/medias?site_id=%s' % (self.uid, self.site_id)
+        self.media_url = f'{self._BASE_SITE}ajxp/{self.uid}/2.0/medias?site_id={self.site_id}'
 
     def __str__(self) -> str:
         return str(self.username)
 
-    def get_site_data(self):
-        return self.session.get(f'{self._base_site}ajxp/{self.uid}/2.0/sites?subdomain={self.username}')
+    def get_site_data(self) -> requests.Response:
+        return self.session.get(f'{self._BASE_SITE}ajxp/{self.uid}/2.0/sites?subdomain={self.username}')
 
     def get_site_id(self) -> str:
         return self.site_data_json['sites'][0]['id']
@@ -63,7 +68,7 @@ class Scraper(object):
         return self.site_data_json['sites'][0]['user_id']
 
     def get_media_data(self, page: int):
-        media = self.session.get(self.media_url, params={'size': 100, 'page': page}, headers=self.media_header)
+        media = self.session.get(self.media_url, params={'size': 100, 'page': page}, headers=self.MEDIA_HEADER)
         return media.json()['media']
 
     def get_images_list_by_page(self, page: int) -> list:

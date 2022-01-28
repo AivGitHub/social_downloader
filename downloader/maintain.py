@@ -2,7 +2,7 @@
 # All rights reserved.
 #
 # Use as you want, modify as you want but please include the author's name.
-
+import os
 from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
 from typing import Optional
@@ -16,37 +16,22 @@ from vsco.scraper import Scraper as ScraperVSCO
 
 
 class Maintain(object):
-    _protocol = 'http://'
+    _PROTOCOL = 'http://'
 
     def __init__(self, **kwargs) -> None:
         """ TODO: Update to setter if needed
 
         :param kwargs: user arguments
         """
-        _usernames_arg = kwargs.get('usernames')
+
         _data = kwargs.get('data')
-        _path = kwargs.get('path')
-
-        # TODO: move to setter
-        if _path:
-            _path = _path[0]
-            if _path.startswith('/'):
-                self._path_to_save = _path
-            else:
-                self._path_to_save = pathlib.Path.cwd() / _path
-        else:
-            self._path_to_save = pathlib.Path.cwd()
-
-        if _data:
-            _usernames_arg = _data.split()
-
+        _usernames_arg = _data.split() if _data else kwargs.get('usernames')
         assert _usernames_arg != [], 'Usernames is an required argument'
 
-        self._network = kwargs.get('network')
+        self._path_to_save = self._path_gen(kwargs.get('path'))
 
-        # TODO: Move to setter
-        if not self._network:
-            self._network = 'vsco'
+        # TODO: in the future it should be a required field.
+        self._network = kwargs.get('network') or 'vsco'
 
         self.usernames = _usernames_arg
         self.quiet = kwargs.get('quiet')
@@ -55,6 +40,17 @@ class Maintain(object):
     def __str__(self) -> str:
         return str('_'.join(self.usernames))
 
+    @staticmethod
+    def _path_gen(path):
+        if path:
+            path = path[0]
+            if os.path.isabs(path):
+                return pathlib.Path(path)
+            else:
+                return pathlib.Path.cwd() / path
+        else:
+            return pathlib.Path.cwd()
+
     def download_video(self, data: dict, username: Optional[str] = None) -> None:
         """ Can be used independently (without download_media)
 
@@ -62,6 +58,7 @@ class Maintain(object):
         :param username: username of a downloading person
         :return: None
         """
+
         _video_url = data.get('video_url')
         _file_name = _video_url.split('/')[-1]
 
@@ -73,7 +70,7 @@ class Maintain(object):
 
         _video_container_path.mkdir(parents=True, exist_ok=True)
 
-        link = f'{self._protocol}{_video_url}'
+        link = f'{self._PROTOCOL}{_video_url}'
 
         with open(_file_path, 'wb') as f:
             for chunk in requests.get(link, stream=True).iter_content(chunk_size=1024):
@@ -87,6 +84,7 @@ class Maintain(object):
         :param username: username of a downloading person
         :return: None
         """
+
         _responsive_url = data.get('responsive_url')
         _file_name = _responsive_url.split('/')[-1]
 
@@ -98,7 +96,7 @@ class Maintain(object):
 
         _image_container_path.mkdir(parents=True, exist_ok=True)
 
-        link = f'{self._protocol}{_responsive_url}'
+        link = f'{self._PROTOCOL}{_responsive_url}'
 
         with open(_file_path, 'wb') as f:
             f.write(requests.get(link, stream=True).content)
@@ -110,6 +108,7 @@ class Maintain(object):
         :param username: username of a downloading person
         :return: None
         """
+
         _username_path = self._path_to_save / username
         is_video = data.get('is_video')
 
@@ -152,14 +151,12 @@ class Maintain(object):
                 for future in concurrent.futures.as_completed(future_to_url):
                     future.result()
 
-    def std(self, message, out_type='out') -> None:
+    def std(self, message, to_err=False) -> None:
 
         if self.quiet:
             return
 
-        if out_type == 'out':
-            sys.stdout.write(f'{message}\n')
-        elif out_type == 'error':
-            sys.stderr.write(message)
-        elif out_type == 'in':
-            sys.stdin.write(message)
+        out = sys.stderr if to_err else sys.stdout
+        out.write(message)
+        out.write('\n')
+        out.flush()
