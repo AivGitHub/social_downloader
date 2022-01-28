@@ -137,7 +137,7 @@ class Maintain(object):
 
             _information_file.write_text(pprint.pformat(scraper.site_data_json))
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with ThreadPoolExecutor(max_workers=5) as executor:
                 future_to_url = {
                     executor.submit(self.download_media, _data, username=username): _data for _data in _images_list
                 }
