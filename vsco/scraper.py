@@ -3,10 +3,12 @@
 #
 # Use as you want, modify as you want but please include the author's name.
 
-from concurrent.futures import ThreadPoolExecutor
 import concurrent.futures
-import requests
 import time
+
+from concurrent.futures import ThreadPoolExecutor
+
+import requests
 
 
 class Scraper(object):

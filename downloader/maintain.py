@@ -6,15 +6,18 @@
 import concurrent.futures
 import pathlib
 import pprint
-import requests
 import sys
 
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
+
+import requests
+
 from vsco.scraper import Scraper as ScraperVSCO
 
 
 class Maintain(object):
+    DEFAULT_CHUNK_SIZE = 1024 * 1024
     _PROTOCOL = 'http://'
 
     def __init__(self, **kwargs) -> None:
@@ -41,9 +44,7 @@ class Maintain(object):
 
     @staticmethod
     def _path_gen(path):
-        if path:
-            path = path[0]
-        return pathlib.Path(path or '.').resolve()
+        return pathlib.Path((path and path[0]) or '.').resolve()
 
     def download_video(self, data: dict, username: Optional[str] = None) -> None:
         """ Can be used independently (without download_media)
@@ -66,10 +67,9 @@ class Maintain(object):
 
         link = f'{self._PROTOCOL}{_video_url}'
 
-        with open(_file_path, 'wb') as f:
-            for chunk in requests.get(link, stream=True).iter_content(chunk_size=1024):
-                if chunk:
-                    f.write(chunk)
+        with _file_path.open('wb') as f:
+            for chunk in requests.get(link, stream=True).iter_content(chunk_size=self.DEFAULT_CHUNK_SIZE):
+                f.write(chunk)
 
     def download_image(self, data: dict, username: Optional[str] = None) -> None:
         """ Can be used independently (without download_media)
@@ -92,8 +92,7 @@ class Maintain(object):
 
         link = f'{self._PROTOCOL}{_responsive_url}'
 
-        with open(_file_path, 'wb') as f:
-            f.write(requests.get(link, stream=True).content)
+        _file_path.write_bytes(requests.get(link, stream=True).content)
 
     def download_media(self, data: dict, username: Optional[str] = None) -> None:
         """
@@ -111,10 +110,15 @@ class Maintain(object):
 
         _username_path.mkdir(parents=True, exist_ok=True)
 
-        if is_video:
-            self.download_video(data, username=username)
-        else:
-            self.download_image(data, username=username)
+        try:
+            if is_video:
+                self.download_video(data, username=username)
+            else:
+                self.download_image(data, username=username)
+        except (requests.exceptions.ChunkedEncodingError,
+                requests.exceptions.ContentDecodingError,
+                requests.exceptions.ConnectionError) as e:
+            self.std(f'download_media error: {e}', True)
 
     def process(self) -> None:
         self.std(f'Started {self.mode} process..')
@@ -133,7 +137,6 @@ class Maintain(object):
             _information_file = self._path_to_save / username / 'information.txt'
 
             _username_path.mkdir(parents=True, exist_ok=True)
-            _information_file.touch(exist_ok=True)
 
             _information_file.write_text(pprint.pformat(scraper.site_data_json))
 
@@ -151,6 +154,6 @@ class Maintain(object):
             return
 
         out = sys.stderr if to_err else sys.stdout
-        out.write(message)
+        out.write(str(message))
         out.write('\n')
         out.flush()
