@@ -4,9 +4,8 @@
 # Use as you want, modify as you want but please include the author's name.
 
 import concurrent.futures
-import time
-
 from concurrent.futures import ThreadPoolExecutor
+import time
 
 import requests
 

@@ -30,9 +30,8 @@ setup(
         'Bug Tracker': 'https://github.com/AivGitHub/social_downloader/issues',
     },
     license='MIT',
-    #TODO:
-    # author='',
-    # author_email='',
+    author='Ivan Koldakov',
+    author_email='coldie322@gmail.com',
     description='Social media downloader',
     long_description=get_file('README.md'),
     long_description_content_type='text/markdown',
